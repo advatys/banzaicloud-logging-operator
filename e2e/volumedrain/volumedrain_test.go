@@ -118,6 +118,11 @@ func TestVolumeDrain_Downscale(t *testing.T) {
 		}
 		require.NoError(t, c.GetClient().Create(ctx, &flow))
 
+		if !assert.Eventually(t, cond.PodShouldBeRunning(t, c.GetClient(), client.ObjectKey{Namespace: ns, Name: logging.Name + "-fluentd-0"}), 10*time.Minute, 5*time.Second) {
+			var podList corev1.PodList
+			err := c.GetClient().List(ctx, &podList)
+			t.Logf("pods: %v (err: %v)", podList.Items, err)
+		}
 		fluentdReplicaName := logging.Name + "-fluentd-1"
 		require.Eventually(t, cond.PodShouldBeRunning(t, c.GetClient(), client.ObjectKey{Namespace: ns, Name: fluentdReplicaName}), 10*time.Minute, 5*time.Second)
 
