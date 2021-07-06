@@ -131,7 +131,7 @@ func TestVolumeDrain_Downscale(t *testing.T) {
 		require.NoError(t, exec.Command("kubectl", "-n", consumer.PodKey.Namespace, "exec", consumer.PodKey.Name, "--", "curl", "-sS", "http://localhost:8082/off").Run())
 
 		fluentdReplicaName := logging.Name + "-fluentd-1"
-		require.Eventually(t, cond.PodShouldBeRunning(t, c.GetClient(), client.ObjectKey{Namespace: ns, Name: fluentdReplicaName}), 2*time.Minute, 5*time.Second)
+		require.Eventually(t, cond.PodShouldBeRunning(t, c.GetClient(), client.ObjectKey{Namespace: ns, Name: fluentdReplicaName}), 3*time.Minute, 5*time.Second)
 
 		require.Eventually(t, func() bool {
 			rawOut, err := exec.Command("kubectl", "-n", ns, "exec", fluentdReplicaName, "-c", "fluentd", "--", "ls", "-1", "/buffers").Output()
