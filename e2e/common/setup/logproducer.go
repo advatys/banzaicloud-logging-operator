@@ -44,6 +44,7 @@ func LogProducer(t *testing.T, c client.Client, opts ...LogProducerOption) {
 	lbls := map[string]string{
 		"app.kubernetes.io/name": options.Name,
 	}
+	lbls = utils.MergeLabels(lbls, options.Labels)
 	logProducerDeployment := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      options.Name,
@@ -89,6 +90,7 @@ func (fn LogProducerOptionFunc) ApplyToLogProducerOptions(options *LogProducerOp
 }
 
 type LogProducerOptions struct {
+	Labels    map[string]string
 	Name      string
 	Namespace string
 	Replicas  int

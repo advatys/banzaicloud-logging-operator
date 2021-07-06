@@ -106,7 +106,11 @@ func TestVolumeDrain_Downscale(t *testing.T) {
 			Spec: v1beta1.FlowSpec{
 				Match: []v1beta1.Match{
 					{
-						Select: &v1beta1.Select{},
+						Select: &v1beta1.Select{
+							Labels: map[string]string{
+								"my-unique-label": "log-producer",
+							},
+						},
 					},
 				},
 				LocalOutputRefs: []string{output.Name},
@@ -114,8 +118,12 @@ func TestVolumeDrain_Downscale(t *testing.T) {
 		}
 		require.NoError(t, c.GetClient().Create(ctx, &flow))
 
+		fluentdReplicaName := logging.Name + "-fluentd-1"
+		require.Eventually(t, cond.PodShouldBeRunning(t, c.GetClient(), client.ObjectKey{Namespace: ns, Name: fluentdReplicaName}), 5*time.Minute, 5*time.Second)
+
 		setup.LogProducer(t, c.GetClient(), setup.LogProducerOptionFunc(func(options *setup.LogProducerOptions) {
 			options.Namespace = ns
+			options.Labels = flow.Spec.Match[0].Select.Labels
 		}))
 
 		require.Eventually(t, func() bool {
@@ -129,9 +137,6 @@ func TestVolumeDrain_Downscale(t *testing.T) {
 		}, 5*time.Minute, 2*time.Second)
 
 		require.NoError(t, exec.Command("kubectl", "-n", consumer.PodKey.Namespace, "exec", consumer.PodKey.Name, "--", "curl", "-sS", "http://localhost:8082/off").Run())
-
-		fluentdReplicaName := logging.Name + "-fluentd-1"
-		require.Eventually(t, cond.PodShouldBeRunning(t, c.GetClient(), client.ObjectKey{Namespace: ns, Name: fluentdReplicaName}), 5*time.Minute, 5*time.Second)
 
 		require.Eventually(t, func() bool {
 			rawOut, err := exec.Command("kubectl", "-n", ns, "exec", fluentdReplicaName, "-c", "fluentd", "--", "ls", "-1", "/buffers").Output()
